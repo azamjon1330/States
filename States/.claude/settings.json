@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"c:/Users/malik/OneDrive/Desktop/States\" remote -v)",
+      "Bash(git -C \"c:/Users/malik/OneDrive/Desktop/States\" remote set-url origin https://github.com/azamjon1330/States.git)",
+      "Bash(go version *)",
+      "Bash(docker --version)"
+    ]
+  }
+}
