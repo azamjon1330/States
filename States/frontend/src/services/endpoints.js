@@ -77,6 +77,8 @@ export const financeAPI = {
   addExpense: (data) => api.post('/finance/expenses', data),
   getChart: (params) => api.get('/finance/chart', { params }),
   getExpenseBreakdown: () => api.get('/finance/expense-breakdown'),
+  deleteIncome: (id) => api.delete(`/finance/income/${id}`),
+  deleteExpense: (id) => api.delete(`/finance/expenses/${id}`),
 }
 
 // ─── Salaries ─────────────────────────────────────────────────────────────────
@@ -119,4 +121,22 @@ export const reportsAPI = {
   getRevenue: (params) => api.get('/reports/revenue', { params }),
   getPopularTreatments: () => api.get('/reports/popular-treatments'),
   getStaffPerformance: () => api.get('/reports/staff-performance'),
+  // aliases used by Reports.jsx
+  getVisits: (params) => api.get('/reports/attendance', { params }),
+  getIncome: (params) => api.get('/reports/revenue', { params }),
+  getExpenses: (params) => api.get('/reports/revenue', { params }),
+  getPopularity: (params) => api.get('/reports/popular-treatments', { params }),
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+export const settingsAPI = {
+  getHospital: () => Promise.resolve({ data: null }),
+  updateHospital: () => Promise.resolve({ data: null }),
+  getUsers: (params) => api.get('/users', { params }),
+  createUser: (data) => api.post('/auth/register', data),
+  updateUser: (id, data) => api.put(`/auth/profile`, data),
+  deleteUser: (id) => api.put(`/users/${id}/toggle`),
+  getDepartments: () => Promise.resolve({ data: [] }),
+  createDepartment: () => Promise.resolve({ data: null }),
+  deleteDepartment: () => Promise.resolve({ data: null }),
 }
