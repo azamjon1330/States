@@ -14,14 +14,6 @@ import Select from '../../components/ui/Select'
 import { PageLoader } from '../../components/ui/LoadingSpinner'
 import Avatar from '../../components/ui/Avatar'
 
-const mockNurses = [
-  { id: 1, full_name: 'Иванова Мария', department: 'Кардиология', phone: '+998 90 100 1001', status: 'active', shift: 'morning', experience: 5 },
-  { id: 2, full_name: 'Петрова Анна', department: 'Хирургия', phone: '+998 91 200 2002', status: 'active', shift: 'evening', experience: 8 },
-  { id: 3, full_name: 'Сидорова Елена', department: 'Терапия', phone: '+998 93 300 3003', status: 'active', shift: 'night', experience: 3 },
-  { id: 4, full_name: 'Козлова Ольга', department: 'Педиатрия', phone: '+998 94 400 4004', status: 'inactive', shift: 'morning', experience: 12 },
-  { id: 5, full_name: 'Новикова Вера', department: 'Неврология', phone: '+998 95 500 5005', status: 'active', shift: 'morning', experience: 6 },
-  { id: 6, full_name: 'Морозова Тамара', department: 'ЛОР', phone: '+998 97 600 6006', status: 'active', shift: 'evening', experience: 4 },
-]
 
 const shiftLabels = { morning: 'Утренняя', evening: 'Вечерняя', night: 'Ночная' }
 const shiftVariants = { morning: 'blue', evening: 'yellow', night: 'purple' }
@@ -92,7 +84,10 @@ export default function Nurses() {
     queryFn: () => nursesAPI.getAll({ page, limit: 15, search }).then((r) => r.data),
   })
 
-  const nurses = data?.items || mockNurses
+  const nurses = Array.isArray(data) ? data
+    : Array.isArray(data?.data) ? data.data
+    : Array.isArray(data?.items) ? data.items
+    : []
   const total = data?.total || nurses.length
   const totalPages = Math.ceil(total / 15) || 1
 

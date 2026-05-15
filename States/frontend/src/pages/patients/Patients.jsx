@@ -13,16 +13,6 @@ import Avatar from '../../components/ui/Avatar'
 import PatientForm from './PatientForm'
 import PatientDetail from './PatientDetail'
 
-const mockPatients = [
-  { id: 1, full_name: 'Алиев Улугбек', phone: '+998 90 123 4567', date_of_birth: '1985-03-15', gender: 'male', blood_type: 'A+', status: 'active' },
-  { id: 2, full_name: 'Мирзаева Зебо', phone: '+998 91 234 5678', date_of_birth: '1990-07-22', gender: 'female', blood_type: 'B+', status: 'active' },
-  { id: 3, full_name: 'Ботиров Фаррух', phone: '+998 93 345 6789', date_of_birth: '1978-11-08', gender: 'male', blood_type: 'O+', status: 'active' },
-  { id: 4, full_name: 'Усмонова Барно', phone: '+998 94 456 7890', date_of_birth: '2001-02-14', gender: 'female', blood_type: 'AB+', status: 'active' },
-  { id: 5, full_name: 'Қодиров Шерзод', phone: '+998 95 567 8901', date_of_birth: '1995-06-30', gender: 'male', blood_type: 'A-', status: 'active' },
-  { id: 6, full_name: 'Назарова Дилноза', phone: '+998 97 678 9012', date_of_birth: '1988-12-05', gender: 'female', blood_type: 'B-', status: 'inactive' },
-  { id: 7, full_name: 'Исмоилов Жамшид', phone: '+998 99 789 0123', date_of_birth: '1972-08-19', gender: 'male', blood_type: 'O-', status: 'active' },
-  { id: 8, full_name: 'Хасанова Малика', phone: '+998 90 890 1234', date_of_birth: '2003-04-25', gender: 'female', blood_type: 'AB-', status: 'active' },
-]
 
 export default function Patients() {
   const qc = useQueryClient()
@@ -39,8 +29,11 @@ export default function Patients() {
     queryFn: () => patientsAPI.getAll({ page, limit: pageSize, search }).then((r) => r.data),
   })
 
-  const patients = data?.items || mockPatients
-  const total = data?.total || mockPatients.length
+  const patients = Array.isArray(data) ? data
+    : Array.isArray(data?.data) ? data.data
+    : Array.isArray(data?.items) ? data.items
+    : []
+  const total = data?.total || patients.length
   const totalPages = Math.ceil(total / pageSize) || 1
 
   const deleteMut = useMutation({

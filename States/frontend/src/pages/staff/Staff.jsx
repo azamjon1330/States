@@ -14,15 +14,6 @@ import Select from '../../components/ui/Select'
 import { PageLoader } from '../../components/ui/LoadingSpinner'
 import Avatar from '../../components/ui/Avatar'
 
-const mockStaff = [
-  { id: 1, full_name: 'Акбаров Тимур', specialization: 'Кардиолог', phone: '+998 90 111 1111', appointments_count: 124, rating: 4.9, status: 'active', experience: 12 },
-  { id: 2, full_name: 'Садыкова Гулноза', specialization: 'Хирург', phone: '+998 91 222 2222', appointments_count: 98, rating: 4.8, status: 'active', experience: 15 },
-  { id: 3, full_name: 'Рашидов Бобур', specialization: 'Невролог', phone: '+998 93 333 3333', appointments_count: 87, rating: 4.7, status: 'active', experience: 9 },
-  { id: 4, full_name: 'Камолова Нилуфар', specialization: 'Терапевт', phone: '+998 94 444 4444', appointments_count: 76, rating: 4.6, status: 'active', experience: 7 },
-  { id: 5, full_name: 'Юсупов Алишер', specialization: 'Педиатр', phone: '+998 95 555 5555', appointments_count: 65, rating: 4.5, status: 'active', experience: 5 },
-  { id: 6, full_name: 'Хасанов Феруз', specialization: 'ЛОР-врач', phone: '+998 97 666 6666', appointments_count: 54, rating: 4.4, status: 'active', experience: 8 },
-  { id: 7, full_name: 'Турсунова Дилрабо', specialization: 'Офтальмолог', phone: '+998 99 777 7777', appointments_count: 43, rating: 4.3, status: 'inactive', experience: 6 },
-]
 
 function StaffForm({ open, onClose, staff = null }) {
   const qc = useQueryClient()
@@ -117,7 +108,10 @@ export default function Staff() {
     queryFn: () => staffAPI.getAll({ page, limit: 15, search }).then((r) => r.data),
   })
 
-  const staff = data?.items || mockStaff
+  const staff = Array.isArray(data) ? data
+    : Array.isArray(data?.data) ? data.data
+    : Array.isArray(data?.items) ? data.items
+    : []
   const total = data?.total || staff.length
   const totalPages = Math.ceil(total / 15) || 1
 
