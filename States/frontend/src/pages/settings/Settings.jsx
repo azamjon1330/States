@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Settings as SettingsIcon, Users, Building2, Bell, Shield, Info,
-  Save, PlusCircle, Trash2, Edit2, Eye, EyeOff
+  Save, PlusCircle, Trash2, Edit2, Eye, EyeOff, UserCog
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { settingsAPI } from '../../services/endpoints'
+import { useAuthStore } from '../../store/authStore'
+import api from '../../services/api'
 import Card from '../../components/ui/Card'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
@@ -19,6 +21,7 @@ import Avatar from '../../components/ui/Avatar'
 const TABS = [
   { id: 'general', label: 'Общие настройки', icon: SettingsIcon },
   { id: 'users', label: 'Пользователи', icon: Users },
+  { id: 'staff', label: 'Персонал', icon: UserCog },
   { id: 'departments', label: 'Отделения', icon: Building2 },
   { id: 'notifications', label: 'Уведомления', icon: Bell },
   { id: 'security', label: 'Безопасность', icon: Shield },
@@ -32,23 +35,10 @@ const mockHospital = {
   license: 'МЗ-2024-001', established: '1975',
 }
 
-const mockUsers = [
-  { id: 1, name: 'Администратор', email: 'admin@hospital.com', role: 'admin', status: 'active', last_login: '2025-05-14 14:32' },
-  { id: 2, name: 'Акбаров Тимур', email: 'akbarov@hospital.com', role: 'doctor', status: 'active', last_login: '2025-05-14 11:20' },
-  { id: 3, name: 'Садыкова Гулноза', email: 'sadykova@hospital.com', role: 'doctor', status: 'active', last_login: '2025-05-14 09:45' },
-  { id: 4, name: 'Иванова Мария', email: 'ivanova@hospital.com', role: 'nurse', status: 'inactive', last_login: '2025-05-12 08:00' },
-]
-
-const mockDepartments = [
-  { id: 1, name: 'Кардиология', head: 'Акбаров Тимур', staff_count: 5 },
-  { id: 2, name: 'Хирургия', head: 'Садыкова Гулноза', staff_count: 8 },
-  { id: 3, name: 'Терапия', head: 'Камолова Нилуфар', staff_count: 6 },
-  { id: 4, name: 'Педиатрия', head: 'Юсупов Алишер', staff_count: 4 },
-  { id: 5, name: 'Неврология', head: 'Рашидов Бобур', staff_count: 3 },
-]
-
 const roleLabels = { admin: 'Администратор', super_admin: 'Суперадмин', doctor: 'Врач', nurse: 'Медсестра', accountant: 'Бухгалтер', receptionist: 'Регистратор' }
 const roleVariants = { admin: 'blue', super_admin: 'purple', doctor: 'green', nurse: 'mint', accountant: 'yellow', receptionist: 'gray' }
+
+const emptyStaffForm = { full_name: '', email: '', password: '', role: 'doctor', phone: '', specialization: '', department: '' }
 
 export default function Settings() {
   const qc = useQueryClient()
@@ -62,6 +52,8 @@ export default function Settings() {
     email_appointments: true, email_payments: true, email_stock: true,
     sms_appointments: false, sms_payments: false,
   })
+  const [staffFormOpen, setStaffFormOpen] = useState(false)
+  const [staffForm, setStaffForm] = useState(emptyStaffForm)
 
   const { data: hospitalData } = useQuery({
     queryKey: ['settings-hospital'],
@@ -71,7 +63,7 @@ export default function Settings() {
   const { data: usersData } = useQuery({
     queryKey: ['settings-users'],
     queryFn: () => settingsAPI.getUsers().then((r) => r.data),
-    enabled: activeTab === 'users',
+    enabled: activeTab === 'users' || activeTab === 'staff',
   })
 
   const { data: deptData } = useQuery({
@@ -80,8 +72,29 @@ export default function Settings() {
     enabled: activeTab === 'departments',
   })
 
-  const users = usersData || mockUsers
-  const departments = deptData || mockDepartments
+  const rawUsers = usersData
+  const users = Array.isArray(rawUsers) ? rawUsers
+    : Array.isArray(rawUsers?.data) ? rawUsers.data
+    : Array.isArray(rawUsers?.items) ? rawUsers.items
+    : []
+
+  const departments = Array.isArray(deptData) ? deptData
+    : Array.isArray(deptData?.data) ? deptData.data
+    : Array.isArray(deptData?.items) ? deptData.items
+    : []
+
+  const staffList = users.filter((u) => u.role === 'doctor' || u.role === 'nurse')
+
+  const addStaffMut = useMutation({
+    mutationFn: (data) => api.post('/auth/register', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['settings-users'] })
+      toast.success('Сотрудник добавлен')
+      setStaffFormOpen(false)
+      setStaffForm(emptyStaffForm)
+    },
+    onError: () => toast.error('Ошибка при добавлении сотрудника'),
+  })
 
   const saveHospitalMut = useMutation({
     mutationFn: (data) => settingsAPI.updateHospital(data),
@@ -182,6 +195,122 @@ export default function Settings() {
                 </table>
               </div>
               <ConfirmDialog open={!!deleteUserId} onClose={() => setDeleteUserId(null)} onConfirm={() => deleteUserMut.mutate(deleteUserId)} loading={deleteUserMut.isPending} message="Удалить этого пользователя?" />
+            </Card>
+          )}
+
+          {/* Staff */}
+          {activeTab === 'staff' && (
+            <Card title="Персонал (врачи и медсёстры)">
+              <div className="flex justify-end mb-4">
+                <Button icon={PlusCircle} onClick={() => { setStaffForm(emptyStaffForm); setStaffFormOpen(true) }}>
+                  Добавить врача/медсестру
+                </Button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      {['Сотрудник', 'Email', 'Роль', 'Телефон', ''].map((h) => (
+                        <th key={h} className="table-header">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {staffList.length === 0 && (
+                      <tr><td colSpan={5} className="text-center py-12 text-sm text-medical-text-secondary">Персонал не найден</td></tr>
+                    )}
+                    {staffList.map((u) => (
+                      <tr key={u.id} className="border-b border-gray-50 hover:bg-gray-50/60">
+                        <td className="table-cell">
+                          <div className="flex items-center gap-3">
+                            <Avatar name={u.full_name || u.name} size="sm" />
+                            <span className="font-medium">{u.full_name || u.name}</span>
+                          </div>
+                        </td>
+                        <td className="table-cell text-medical-text-secondary">{u.email}</td>
+                        <td className="table-cell"><Badge variant={roleVariants[u.role] || 'gray'}>{roleLabels[u.role] || u.role}</Badge></td>
+                        <td className="table-cell text-medical-text-secondary">{u.phone || '—'}</td>
+                        <td className="table-cell">
+                          <button onClick={() => setDeleteUserId(u.id)} className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-medical-danger"><Trash2 size={14} /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* Add staff modal */}
+              <Modal
+                open={staffFormOpen}
+                onClose={() => setStaffFormOpen(false)}
+                title="Добавить врача / медсестру"
+                size="lg"
+                footer={
+                  <>
+                    <Button variant="secondary" onClick={() => setStaffFormOpen(false)}>Отмена</Button>
+                    <Button
+                      onClick={() => addStaffMut.mutate(staffForm)}
+                      loading={addStaffMut.isPending}
+                    >
+                      Добавить
+                    </Button>
+                  </>
+                }
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Имя (ФИО)"
+                    value={staffForm.full_name}
+                    onChange={(e) => setStaffForm((f) => ({ ...f, full_name: e.target.value }))}
+                    required
+                    placeholder="Иванов Иван Иванович"
+                    className="col-span-2"
+                  />
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={staffForm.email}
+                    onChange={(e) => setStaffForm((f) => ({ ...f, email: e.target.value }))}
+                    required
+                    placeholder="doctor@hospital.com"
+                  />
+                  <Input
+                    label="Пароль"
+                    type="password"
+                    value={staffForm.password}
+                    onChange={(e) => setStaffForm((f) => ({ ...f, password: e.target.value }))}
+                    required
+                    placeholder="••••••••"
+                  />
+                  <Select
+                    label="Роль"
+                    value={staffForm.role}
+                    onChange={(e) => setStaffForm((f) => ({ ...f, role: e.target.value }))}
+                    options={[{ value: 'doctor', label: 'Врач' }, { value: 'nurse', label: 'Медсестра' }]}
+                  />
+                  <Input
+                    label="Телефон"
+                    value={staffForm.phone}
+                    onChange={(e) => setStaffForm((f) => ({ ...f, phone: e.target.value }))}
+                    placeholder="+998 90 000 0000"
+                  />
+                  {staffForm.role === 'doctor' && (
+                    <Input
+                      label="Специализация"
+                      value={staffForm.specialization}
+                      onChange={(e) => setStaffForm((f) => ({ ...f, specialization: e.target.value }))}
+                      placeholder="Кардиолог"
+                      className="col-span-2"
+                    />
+                  )}
+                  <Input
+                    label="Отдел"
+                    value={staffForm.department}
+                    onChange={(e) => setStaffForm((f) => ({ ...f, department: e.target.value }))}
+                    placeholder="Кардиология"
+                    className="col-span-2"
+                  />
+                </div>
+              </Modal>
             </Card>
           )}
 

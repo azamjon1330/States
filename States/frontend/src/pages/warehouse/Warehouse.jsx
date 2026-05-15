@@ -20,17 +20,6 @@ const CATEGORY_TABS = [
   { id: 'equipment', label: 'Оборудование' },
 ]
 
-const mockItems = [
-  { id: 1, name: 'Перчатки медицинские (L)', category: 'consumable', qty: 500, unit: 'пар', price: 45, supplier: 'МедТорг', purchase_date: '2025-05-12', expiry_date: '2026-05-12', status: 'in-stock', min_qty: 100 },
-  { id: 2, name: 'Шприцы 10мл', category: 'consumable', qty: 200, unit: 'шт', price: 12, supplier: 'ФармГрупп', purchase_date: '2025-05-11', expiry_date: '2027-01-01', status: 'in-stock', min_qty: 50 },
-  { id: 3, name: 'Маски N95', category: 'consumable', qty: 15, unit: 'шт', price: 85, supplier: 'МедТорг', purchase_date: '2025-04-20', expiry_date: '2026-04-20', status: 'low-stock', min_qty: 50 },
-  { id: 4, name: 'Парацетамол 500мг', category: 'medicine', qty: 300, unit: 'табл', price: 8, supplier: 'ФармДист', purchase_date: '2025-05-10', expiry_date: '2026-10-01', status: 'in-stock', min_qty: 100 },
-  { id: 5, name: 'Амоксициллин 500мг', category: 'medicine', qty: 120, unit: 'капс', price: 25, supplier: 'ФармДист', purchase_date: '2025-05-09', expiry_date: '2026-09-01', status: 'in-stock', min_qty: 50 },
-  { id: 6, name: 'Ибупрофен 400мг', category: 'medicine', qty: 8, unit: 'табл', price: 15, supplier: 'МедАптека', purchase_date: '2025-04-15', expiry_date: '2026-04-15', status: 'low-stock', min_qty: 50 },
-  { id: 7, name: 'ЭКГ аппарат', category: 'equipment', qty: 2, unit: 'шт', price: 350000, supplier: 'МедТех', purchase_date: '2024-01-15', expiry_date: null, status: 'in-stock', min_qty: 1 },
-  { id: 8, name: 'Тонометр электронный', category: 'equipment', qty: 8, unit: 'шт', price: 12000, supplier: 'МедТех', purchase_date: '2024-06-10', expiry_date: null, status: 'in-stock', min_qty: 3 },
-  { id: 9, name: 'Бинты стерильные', category: 'consumable', qty: 0, unit: 'рул', price: 35, supplier: 'МедТорг', purchase_date: '2025-03-01', expiry_date: '2027-03-01', status: 'out-of-stock', min_qty: 20 },
-]
 
 function WarehouseForm({ open, onClose, item = null }) {
   const qc = useQueryClient()
@@ -110,7 +99,10 @@ export default function Warehouse() {
     queryFn: () => warehouseAPI.getAll({ page, category, search, limit: 15 }).then((r) => r.data),
   })
 
-  const items = data?.items || data || mockItems
+  const items = Array.isArray(data) ? data
+    : Array.isArray(data?.data) ? data.data
+    : Array.isArray(data?.items) ? data.items
+    : []
   const filtered = items
     .filter((i) => !category || i.category === category)
     .filter((i) => !search || i.name.toLowerCase().includes(search.toLowerCase()))

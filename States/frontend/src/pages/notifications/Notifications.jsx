@@ -12,15 +12,6 @@ import { PageLoader } from '../../components/ui/LoadingSpinner'
 import { formatDistanceToNow } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
-const mockNotifications = [
-  { id: 1, type: 'appointment', title: 'Новый приём', body: 'Пациент Алиев Улугбек записан на приём к д-ру Акбарову на 14:00', time: new Date(Date.now() - 600000).toISOString(), read: false },
-  { id: 2, type: 'payment', title: 'Оплата получена', body: 'Оплата в размере 85 000 ₽ получена от пациента Мирзаева Зебо', time: new Date(Date.now() - 1800000).toISOString(), read: false },
-  { id: 3, type: 'stock', title: 'Низкий запас на складе', body: 'Маски N95: осталось 15 шт (минимум: 50). Необходимо пополнить запас.', time: new Date(Date.now() - 3600000).toISOString(), read: false },
-  { id: 4, type: 'patient', title: 'Новый пациент', body: 'Зарегистрирован новый пациент: Ботиров Фаррух', time: new Date(Date.now() - 7200000).toISOString(), read: true },
-  { id: 5, type: 'system', title: 'Обновление системы', body: 'Система успешно обновлена до версии 2.1.0', time: new Date(Date.now() - 86400000).toISOString(), read: true },
-  { id: 6, type: 'appointment', title: 'Приём завершён', body: 'Д-р Садыкова Г. завершила приём пациента Усмонова Барно', time: new Date(Date.now() - 90000000).toISOString(), read: true },
-  { id: 7, type: 'alert', title: 'Срок годности истекает', body: 'Ибупрофен 400мг: срок годности истекает через 7 дней', time: new Date(Date.now() - 172800000).toISOString(), read: true },
-]
 
 const typeConfig = {
   appointment: { icon: Calendar, color: '#2563EB', bg: '#dbeafe' },
@@ -44,7 +35,10 @@ export default function Notifications() {
     refetchInterval: 30000,
   })
 
-  const notifications = data?.items || data || mockNotifications
+  const notifications = Array.isArray(data) ? data
+    : Array.isArray(data?.data) ? data.data
+    : Array.isArray(data?.items) ? data.items
+    : []
 
   const filtered = notifications.filter((n) => {
     if (activeTab === 'unread') return !n.read

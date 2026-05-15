@@ -9,20 +9,6 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import { PageLoader } from '../../components/ui/LoadingSpinner'
 import RoomForm from './RoomForm'
 
-const mockRooms = [
-  { id: 1, number: '101', name: 'Кардиология', type: 'treatment', floor: 1, status: 'occupied', capacity: 2 },
-  { id: 2, number: '102', name: 'Хирургия', type: 'surgery', floor: 1, status: 'free', capacity: 1 },
-  { id: 3, number: '103', name: 'Регистратура', type: 'reception', floor: 1, status: 'occupied', capacity: 3 },
-  { id: 4, number: '201', name: 'Неврология', type: 'consultation', floor: 2, status: 'free', capacity: 1 },
-  { id: 5, number: '202', name: 'Терапия', type: 'consultation', floor: 2, status: 'occupied', capacity: 1 },
-  { id: 6, number: '203', name: 'УЗИ кабинет', type: 'diagnostic', floor: 2, status: 'free', capacity: 1 },
-  { id: 7, number: '301', name: 'Педиатрия', type: 'treatment', floor: 3, status: 'maintenance', capacity: 3 },
-  { id: 8, number: '302', name: 'ЛОР', type: 'consultation', floor: 3, status: 'free', capacity: 1 },
-  { id: 9, number: '401', name: 'Реанимация', type: 'icu', floor: 4, status: 'occupied', capacity: 4 },
-  { id: 10, number: '402', name: 'Лаборатория', type: 'lab', floor: 4, status: 'free', capacity: 2 },
-  { id: 11, number: '501', name: 'VIP палата 1', type: 'treatment', floor: 5, status: 'free', capacity: 1 },
-  { id: 12, number: '502', name: 'VIP палата 2', type: 'treatment', floor: 5, status: 'occupied', capacity: 1 },
-]
 
 const STATUS_TABS = [
   { id: '', label: 'Все', color: 'bg-gray-100 text-gray-600' },
@@ -59,7 +45,10 @@ export default function Rooms() {
     queryFn: () => roomsAPI.getAll({ status: statusFilter }).then((r) => r.data),
   })
 
-  const rooms = data?.items || data || mockRooms
+  const rooms = Array.isArray(data) ? data
+    : Array.isArray(data?.data) ? data.data
+    : Array.isArray(data?.items) ? data.items
+    : []
   const filtered = statusFilter ? rooms.filter((r) => r.status === statusFilter) : rooms
 
   const stats = {

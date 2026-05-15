@@ -17,20 +17,6 @@ const mockConversations = [
   { id: 5, name: 'Общий чат', role: 'Группа', lastMessage: 'Совещание в 15:00', time: new Date(Date.now() - 3600000).toISOString(), unread: 5, online: true, isGroup: true },
 ]
 
-const mockMessages = {
-  1: [
-    { id: 1, sender_name: 'Акбаров Тимур', content: 'Добрый день! Как дела с пациентом Алиевым?', time: new Date(Date.now() - 600000).toISOString(), mine: false },
-    { id: 2, sender_name: 'Я', content: 'Стабильно. Давление нормализовалось после приёма препаратов.', time: new Date(Date.now() - 540000).toISOString(), mine: true },
-    { id: 3, sender_name: 'Акбаров Тимур', content: 'Хорошо. Когда будут готовы результаты ЭКГ?', time: new Date(Date.now() - 480000).toISOString(), mine: false },
-    { id: 4, sender_name: 'Я', content: 'Примерно через час. Я отправлю вам файл сразу.', time: new Date(Date.now() - 420000).toISOString(), mine: true },
-    { id: 5, sender_name: 'Акбаров Тимур', content: 'Хорошо, я посмотрю результаты анализов', time: new Date(Date.now() - 300000).toISOString(), mine: false },
-  ],
-  5: [
-    { id: 1, sender_name: 'Администратор', content: 'Внимание! Совещание врачей в 15:00 в конференц-зале.', time: new Date(Date.now() - 3600000).toISOString(), mine: false },
-    { id: 2, sender_name: 'Акбаров Тимур', content: 'Понял, буду.', time: new Date(Date.now() - 3500000).toISOString(), mine: false },
-    { id: 3, sender_name: 'Я', content: 'Хорошо, спасибо за уведомление.', time: new Date(Date.now() - 3400000).toISOString(), mine: true },
-  ],
-}
 
 function formatMsgTime(time) {
   try { return formatDistanceToNow(new Date(time), { addSuffix: true, locale: ru }) }
@@ -58,12 +44,18 @@ export default function Chat() {
     enabled: !!selectedConv,
   })
 
-  const conversations = conversationsData || mockConversations
+  const conversations = Array.isArray(conversationsData) ? conversationsData
+    : Array.isArray(conversationsData?.data) ? conversationsData.data
+    : Array.isArray(conversationsData?.items) ? conversationsData.items
+    : mockConversations
   const filteredConvs = search
     ? conversations.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
     : conversations
 
-  const messages = messagesData?.items || messagesData || (selectedConv ? mockMessages[selectedConv.id] || [] : [])
+  const messages = Array.isArray(messagesData) ? messagesData
+    : Array.isArray(messagesData?.data) ? messagesData.data
+    : Array.isArray(messagesData?.items) ? messagesData.items
+    : []
   const allMessages = [...messages, ...localMessages]
 
   useEffect(() => {

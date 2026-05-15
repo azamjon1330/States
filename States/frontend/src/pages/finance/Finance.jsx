@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { DollarSign, TrendingDown, TrendingUp, Wallet, PlusCircle, Trash2, CreditCard } from 'lucide-react'
+import { DollarSign, TrendingDown, TrendingUp, Wallet, PlusCircle, CreditCard } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { financeAPI, salariesAPI } from '../../services/endpoints'
 import Card from '../../components/ui/Card'
@@ -14,39 +14,6 @@ import Avatar from '../../components/ui/Avatar'
 import { RevenueAreaChart } from './FinancialCharts'
 
 const TABS = ['Обзор', 'Доходы', 'Расходы', 'Зарплаты']
-
-const mockSummary = { income: 2845000, expenses: 923000, profit: 1922000 }
-
-const mockChart = [
-  { date: 'Янв', income: 1800000, expenses: 650000 },
-  { date: 'Фев', income: 2100000, expenses: 720000 },
-  { date: 'Мар', income: 2400000, expenses: 810000 },
-  { date: 'Апр', income: 2200000, expenses: 780000 },
-  { date: 'Май', income: 2845000, expenses: 923000 },
-]
-
-const mockIncome = [
-  { id: 1, source: 'Приём пациентов', amount: 1800000, date: '2025-05-14', description: 'Доход от приёмов', category: 'appointments' },
-  { id: 2, source: 'Лабораторные анализы', amount: 450000, date: '2025-05-14', description: '', category: 'lab' },
-  { id: 3, source: 'Физиотерапия', amount: 350000, date: '2025-05-13', description: '', category: 'therapy' },
-  { id: 4, source: 'Консультации', amount: 245000, date: '2025-05-13', description: '', category: 'consultations' },
-]
-
-const mockExpenses = [
-  { id: 1, category: 'Зарплаты', amount: 420000, date: '2025-05-10', description: 'Зарплата персонала' },
-  { id: 2, category: 'Расходные материалы', amount: 230000, date: '2025-05-12', description: 'Медицинские расходники' },
-  { id: 3, category: 'Оборудование', amount: 150000, date: '2025-05-08', description: 'Техническое обслуживание' },
-  { id: 4, category: 'Коммунальные', amount: 80000, date: '2025-05-01', description: 'Электричество, вода' },
-  { id: 5, category: 'Прочие', amount: 43000, date: '2025-05-14', description: 'Разные расходы' },
-]
-
-const mockSalaries = [
-  { id: 1, staff_name: 'Акбаров Тимур', role: 'Кардиолог', salary: 8500000, month: 'Май 2025', status: 'paid', paid_at: '2025-05-05' },
-  { id: 2, staff_name: 'Садыкова Гулноза', role: 'Хирург', salary: 9200000, month: 'Май 2025', status: 'paid', paid_at: '2025-05-05' },
-  { id: 3, staff_name: 'Рашидов Бобур', role: 'Невролог', salary: 7800000, month: 'Май 2025', status: 'pending', paid_at: null },
-  { id: 4, staff_name: 'Камолова Нилуфар', role: 'Терапевт', salary: 6500000, month: 'Май 2025', status: 'pending', paid_at: null },
-  { id: 5, staff_name: 'Юсупов Алишер', role: 'Педиатр', salary: 5800000, month: 'Май 2025', status: 'pending', paid_at: null },
-]
 
 function FinanceRecordForm({ open, onClose, type }) {
   const qc = useQueryClient()
@@ -134,21 +101,34 @@ export default function Finance() {
     enabled: activeTab === 3,
   })
 
-  const summary = summaryData || mockSummary
-  const chart = chartData?.length ? chartData : mockChart
-  const income = incomeData?.items || incomeData || mockIncome
-  const expenses = expensesData?.items || expensesData || mockExpenses
-  const salaries = salariesData?.items || salariesData || mockSalaries
+  const summary = summaryData || { income: 0, expenses: 0, profit: 0 }
+  const chart = chartData?.data || chartData || []
 
-  const deleteIncomeMut = useMutation({
-    mutationFn: (id) => financeAPI.deleteIncome(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['finance-income'] }); toast.success('Удалено') },
-  })
+  const rawIncome = Array.isArray(incomeData) ? incomeData
+    : Array.isArray(incomeData?.data) ? incomeData.data
+    : Array.isArray(incomeData?.items) ? incomeData.items
+    : []
+  const income = rawIncome
 
-  const deleteExpenseMut = useMutation({
-    mutationFn: (id) => financeAPI.deleteExpense(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['finance-expenses'] }); toast.success('Удалено') },
-  })
+  const rawExpenses = Array.isArray(expensesData) ? expensesData
+    : Array.isArray(expensesData?.data) ? expensesData.data
+    : Array.isArray(expensesData?.items) ? expensesData.items
+    : []
+  const expenses = rawExpenses
+
+  const rawSalaries = Array.isArray(salariesData) ? salariesData
+    : Array.isArray(salariesData?.data) ? salariesData.data
+    : Array.isArray(salariesData?.items) ? salariesData.items
+    : []
+  const salaries = rawSalaries.map((s) => ({
+    ...s,
+    staff_name: s.Staff?.full_name || s.staff_name || 'Сотрудник',
+    role: s.Staff?.specialization || s.role || '',
+    salary: s.amount || s.salary || 0,
+    month: s.month ? new Date(s.month).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' }) : s.month,
+    status: s.paid ? 'paid' : 'pending',
+    paid_at: s.paid_at ? new Date(s.paid_at).toLocaleDateString('ru-RU') : null,
+  }))
 
   const payMut = useMutation({
     mutationFn: (id) => salariesAPI.pay(id),
@@ -222,12 +202,15 @@ export default function Finance() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    {['Источник / Категория', 'Сумма', 'Дата', 'Описание', ''].map((h) => (
+                    {['Источник / Категория', 'Сумма', 'Дата', 'Описание'].map((h) => (
                       <th key={h} className="table-header">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
+                  {income.length === 0 && (
+                    <tr><td colSpan={4} className="text-center py-12 text-sm text-medical-text-secondary">Доходы не найдены</td></tr>
+                  )}
                   {income.map((r) => (
                     <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                       <td className="table-cell">
@@ -241,11 +224,6 @@ export default function Finance() {
                       <td className="table-cell font-bold text-green-600">+{(r.amount || 0).toLocaleString()} ₽</td>
                       <td className="table-cell text-medical-text-secondary">{r.date}</td>
                       <td className="table-cell text-medical-text-secondary">{r.description || '—'}</td>
-                      <td className="table-cell">
-                        <button onClick={() => deleteIncomeMut.mutate(r.id)} className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-medical-danger">
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -263,12 +241,15 @@ export default function Finance() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    {['Категория', 'Сумма', 'Дата', 'Описание', ''].map((h) => (
+                    {['Категория', 'Сумма', 'Дата', 'Описание'].map((h) => (
                       <th key={h} className="table-header">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
+                  {expenses.length === 0 && (
+                    <tr><td colSpan={4} className="text-center py-12 text-sm text-medical-text-secondary">Расходы не найдены</td></tr>
+                  )}
                   {expenses.map((r) => (
                     <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/60">
                       <td className="table-cell">
@@ -282,11 +263,6 @@ export default function Finance() {
                       <td className="table-cell font-bold text-red-500">-{(r.amount || 0).toLocaleString()} ₽</td>
                       <td className="table-cell text-medical-text-secondary">{r.date}</td>
                       <td className="table-cell text-medical-text-secondary">{r.description || '—'}</td>
-                      <td className="table-cell">
-                        <button onClick={() => deleteExpenseMut.mutate(r.id)} className="p-1.5 rounded hover:bg-red-50 text-gray-400 hover:text-medical-danger">
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
